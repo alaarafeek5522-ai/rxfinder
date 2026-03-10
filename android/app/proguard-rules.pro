@@ -1,0 +1,4 @@
+-keep class io.flutter.** { *; }
+-keep class com.alaa.rxfinder.** { *; }
+-keepattributes *Annotation*
+-dontwarn io.flutter.**
