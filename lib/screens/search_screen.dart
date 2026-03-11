@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:speech_to_text/speech_to_text.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import '../providers/medicine_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/app_theme.dart';
