@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import 'package:speech_to_text/speech_to_text.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import '../providers/medicine_provider.dart';
 import '../providers/settings_provider.dart';
 import '../theme/app_theme.dart';
@@ -20,10 +18,7 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final _ctrl = TextEditingController();
   final _focus = FocusNode();
-  final _speech = SpeechToText();
-  bool _isListening = false;
   bool _hasInternet = true;
-  bool _showSuggestions = false;
 
   @override
   void initState() {
@@ -40,31 +35,8 @@ class _SearchScreenState extends State<SearchScreen> {
     setState(() => _hasInternet = connected);
   }
 
-  Future<void> _startListening() async {
-    final available = await _speech.initialize();
-    if (available) {
-      setState(() => _isListening = true);
-      _speech.listen(
-        onResult: (result) {
-          _ctrl.text = result.recognizedWords;
-          if (result.finalResult) {
-            setState(() => _isListening = false);
-            _search(result.recognizedWords);
-          }
-        },
-        localeId: 'ar_EG',
-      );
-    }
-  }
-
-  void _stopListening() {
-    _speech.stop();
-    setState(() => _isListening = false);
-  }
-
   void _search(String query) {
     if (query.trim().isEmpty) return;
-    setState(() => _showSuggestions = false);
     _focus.unfocus();
     context.read<MedicineProvider>().search(query.trim());
   }
@@ -88,7 +60,6 @@ class _SearchScreenState extends State<SearchScreen> {
           ? NoInternetWidget(onRetry: _checkInternet)
           : CustomScrollView(
               slivers: [
-                // Header
                 SliverToBoxAdapter(
                   child: Container(
                     padding: EdgeInsets.only(
@@ -111,18 +82,14 @@ class _SearchScreenState extends State<SearchScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text('RxFinder 💊',
-                                    style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 22,
-                                        fontWeight: FontWeight.bold)),
+                                    style: TextStyle(color: Colors.white,
+                                        fontSize: 22, fontWeight: FontWeight.bold)),
                                 SizedBox(height: 4),
                                 Text('ابحث عن أي دواء بسهولة',
-                                    style: TextStyle(
-                                        color: Colors.white70, fontSize: 13)),
+                                    style: TextStyle(color: Colors.white70, fontSize: 13)),
                               ],
                             ),
                           ),
-                          // Dark mode toggle
                           GestureDetector(
                             onTap: () => context.read<SettingsProvider>().toggleDarkMode(),
                             child: Container(
@@ -133,25 +100,19 @@ class _SearchScreenState extends State<SearchScreen> {
                               ),
                               child: Icon(
                                 isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-                                color: Colors.white,
-                                size: 22,
+                                color: Colors.white, size: 22,
                               ),
                             ),
                           ),
                         ]),
                         const SizedBox(height: 20),
-                        // Search Bar
                         Container(
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(18),
-                            boxShadow: [
-                              BoxShadow(
+                            boxShadow: [BoxShadow(
                                 color: Colors.black.withOpacity(0.1),
-                                blurRadius: 20,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
+                                blurRadius: 20, offset: const Offset(0, 4))],
                           ),
                           child: Row(children: [
                             const SizedBox(width: 16),
@@ -167,31 +128,14 @@ class _SearchScreenState extends State<SearchScreen> {
                                 decoration: const InputDecoration(
                                   hintText: 'ابحث عن الدواء الذي تحتاجه...',
                                   hintStyle: TextStyle(
-                                      color: AppColors.textSecondary,
-                                      fontSize: 14),
+                                      color: AppColors.textSecondary, fontSize: 14),
                                   border: InputBorder.none,
-                                  contentPadding:
-                                      EdgeInsets.symmetric(vertical: 16),
+                                  contentPadding: EdgeInsets.symmetric(vertical: 16),
                                 ),
-                                onChanged: (v) => setState(
-                                    () => _showSuggestions = v.isNotEmpty),
                                 onSubmitted: _search,
                                 textInputAction: TextInputAction.search,
                               ),
                             ),
-                            // زر الصوت
-                            GestureDetector(
-                              onTap: _isListening ? _stopListening : _startListening,
-                              child: Container(
-                                padding: const EdgeInsets.all(10),
-                                child: Icon(
-                                  _isListening ? Icons.mic_rounded : Icons.mic_none_rounded,
-                                  color: _isListening ? Colors.red : AppColors.primary,
-                                  size: 24,
-                                ),
-                              ),
-                            ),
-                            // زر بحث
                             GestureDetector(
                               onTap: () => _search(_ctrl.text),
                               child: Container(
@@ -205,10 +149,8 @@ class _SearchScreenState extends State<SearchScreen> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Text('بحث',
-                                    style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13)),
+                                    style: TextStyle(color: Colors.white,
+                                        fontWeight: FontWeight.bold, fontSize: 13)),
                               ),
                             ),
                           ]),
@@ -218,9 +160,8 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                 ),
 
-                // Recent Searches
                 if (provider.state == SearchState.idle &&
-                    provider.recentSearches.isNotEmpty)
+                    provider.recentSearches.isNotEmpty) ...[
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
@@ -228,22 +169,17 @@ class _SearchScreenState extends State<SearchScreen> {
                         const Icon(Icons.history_rounded,
                             size: 18, color: AppColors.textSecondary),
                         const SizedBox(width: 6),
-                        const Text('عمليات البحث الأخيرة',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 14)),
+                        const Text('البحث الأخير',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                         const Spacer(),
                         GestureDetector(
                           onTap: provider.clearRecentSearches,
                           child: const Text('مسح الكل',
-                              style: TextStyle(
-                                  fontSize: 12, color: AppColors.primary)),
+                              style: TextStyle(fontSize: 12, color: AppColors.primary)),
                         ),
                       ]),
                     ),
                   ),
-
-                if (provider.state == SearchState.idle &&
-                    provider.recentSearches.isNotEmpty)
                   SliverToBoxAdapter(
                     child: SizedBox(
                       height: 44,
@@ -261,99 +197,70 @@ class _SearchScreenState extends State<SearchScreen> {
                             child: Chip(
                               label: Text(provider.recentSearches[i],
                                   style: const TextStyle(fontSize: 12)),
-                              backgroundColor: isDark
-                                  ? AppColors.darkCard
-                                  : Colors.white,
+                              backgroundColor: isDark ? AppColors.darkCard : Colors.white,
                               deleteIcon: const Icon(Icons.close, size: 14),
-                              onDeleted: () => provider
-                                  .removeRecentSearch(provider.recentSearches[i]),
+                              onDeleted: () =>
+                                  provider.removeRecentSearch(provider.recentSearches[i]),
                             ),
                           ),
                         ),
                       ),
                     ),
                   ),
+                ],
 
-                // Loading
                 if (provider.state == SearchState.loading)
-                  SliverFillRemaining(
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation(AppColors.primary)),
-                          const SizedBox(height: 16),
-                          const Text('جارٍ البحث...',
-                              style: TextStyle(color: AppColors.textSecondary)),
-                        ],
-                      ),
-                    ),
+                  const SliverFillRemaining(
+                    child: Center(child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation(AppColors.primary))),
                   ),
 
-                // Error
                 if (provider.state == SearchState.error)
                   SliverFillRemaining(
                     child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.error_outline_rounded,
-                              size: 60, color: AppColors.error),
-                          const SizedBox(height: 12),
-                          Text(provider.errorMessage,
-                              style: const TextStyle(color: AppColors.error),
-                              textAlign: TextAlign.center),
-                          const SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: () => _search(_ctrl.text),
-                            style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary),
-                            child: const Text('إعادة المحاولة',
-                                style: TextStyle(color: Colors.white)),
-                          ),
-                        ],
-                      ),
+                      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                        const Icon(Icons.error_outline_rounded,
+                            size: 60, color: AppColors.error),
+                        const SizedBox(height: 12),
+                        Text(provider.errorMessage,
+                            style: const TextStyle(color: AppColors.error),
+                            textAlign: TextAlign.center),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () => _search(_ctrl.text),
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary),
+                          child: const Text('إعادة المحاولة',
+                              style: TextStyle(color: Colors.white)),
+                        ),
+                      ]),
                     ),
                   ),
 
-                // Empty results
-                if (provider.state == SearchState.success &&
-                    provider.results.isEmpty)
+                if (provider.state == SearchState.success && provider.results.isEmpty)
                   SliverFillRemaining(
                     child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.medication_outlined,
-                              size: 70,
-                              color: AppColors.primary.withOpacity(0.3)),
-                          const SizedBox(height: 16),
-                          const Text('لم يتم العثور على نتائج',
-                              style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textSecondary)),
-                          const SizedBox(height: 8),
-                          const Text('جرب كلمة بحث مختلفة',
-                              style: TextStyle(color: AppColors.textSecondary)),
-                        ],
-                      ),
+                      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                        Icon(Icons.medication_outlined, size: 70,
+                            color: AppColors.primary.withOpacity(0.3)),
+                        const SizedBox(height: 16),
+                        const Text('لم يتم العثور على نتائج',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,
+                                color: AppColors.textSecondary)),
+                        const SizedBox(height: 8),
+                        const Text('جرب كلمة بحث مختلفة',
+                            style: TextStyle(color: AppColors.textSecondary)),
+                      ]),
                     ),
                   ),
 
-                // Results
-                if (provider.state == SearchState.success &&
-                    provider.results.isNotEmpty) ...[
+                if (provider.state == SearchState.success && provider.results.isNotEmpty) ...[
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-                      child: Text(
-                        '${provider.results.length} نتيجة',
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 14,
-                            color: AppColors.textSecondary),
-                      ),
+                      child: Text('${provider.results.length} نتيجة',
+                          style: const TextStyle(fontWeight: FontWeight.bold,
+                              fontSize: 14, color: AppColors.textSecondary)),
                     ),
                   ),
                   SliverList(
@@ -361,43 +268,29 @@ class _SearchScreenState extends State<SearchScreen> {
                       (ctx, i) => MedicineCard(
                         medicine: provider.results[i],
                         index: i,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => MedicineDetailScreen(
-                                  medicine: provider.results[i]),
-                            ),
-                          );
-                        },
+                        onTap: () => Navigator.push(context,
+                            MaterialPageRoute(builder: (_) =>
+                                MedicineDetailScreen(medicine: provider.results[i]))),
                       ),
                       childCount: provider.results.length,
                     ),
                   ),
                 ],
 
-                // Idle empty state
-                if (provider.state == SearchState.idle &&
-                    provider.recentSearches.isEmpty)
+                if (provider.state == SearchState.idle && provider.recentSearches.isEmpty)
                   SliverFillRemaining(
                     child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.local_pharmacy_rounded,
-                              size: 80,
-                              color: AppColors.primary.withOpacity(0.2)),
-                          const SizedBox(height: 16),
-                          const Text('ابحث عن أي دواء',
-                              style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textSecondary)),
-                          const SizedBox(height: 8),
-                          const Text('اكتب اسم الدواء في خانة البحث',
-                              style: TextStyle(color: AppColors.textSecondary)),
-                        ],
-                      ),
+                      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                        Icon(Icons.local_pharmacy_rounded, size: 80,
+                            color: AppColors.primary.withOpacity(0.2)),
+                        const SizedBox(height: 16),
+                        const Text('ابحث عن أي دواء',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,
+                                color: AppColors.textSecondary)),
+                        const SizedBox(height: 8),
+                        const Text('اكتب اسم الدواء في خانة البحث',
+                            style: TextStyle(color: AppColors.textSecondary)),
+                      ]),
                     ),
                   ),
 
