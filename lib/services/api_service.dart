@@ -14,12 +14,12 @@ class ApiService {
       final uri = Uri.parse('$_baseUrl/search.php').replace(
         queryParameters: {'name': query},
       );
-      final response = await http.get(uri, headers: _headers)
+      final response = await http
+          .get(uri, headers: _headers)
           .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        // الـ API بيرجع {"code":200,"products":[...]}
         if (data is Map && data['products'] is List) {
           return (data['products'] as List)
               .map((e) => Medicine.fromSearchJson(e))
@@ -35,23 +35,39 @@ class ApiService {
     }
   }
 
-  static Future<Medicine?> getMedicineInfo(String id) async {
+  static Future<Medicine?> getMedicineInfo(String id, Medicine base) async {
     try {
       final uri = Uri.parse('$_baseUrl/info.php').replace(
         queryParameters: {'id': id},
       );
-      final response = await http.get(uri, headers: _headers)
+      final response = await http
+          .get(uri, headers: _headers)
           .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data is Map<String, dynamic>) {
-          return Medicine.fromInfoJson(data);
+        if (data is Map && data['msg'] != null) {
+          // إزالة HTML tags من الـ msg
+          final rawHtml = data['msg'].toString();
+          final cleanText = rawHtml
+              .replaceAll(RegExp(r'<[^>]*>'), '')
+              .replaceAll('&nbsp;', ' ')
+              .trim();
+          return Medicine(
+            id: base.id,
+            name: base.name,
+            description: cleanText,
+            category: base.category,
+            imageUrl: base.imageUrl,
+            price: base.price,
+            manufacturer: base.manufacturer,
+            activeIngredient: base.activeIngredient,
+          );
         }
       }
-      return null;
+      return base;
     } catch (e) {
-      throw Exception('فشل تحميل تفاصيل الدواء');
+      return base;
     }
   }
 }

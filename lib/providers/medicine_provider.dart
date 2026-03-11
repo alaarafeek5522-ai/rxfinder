@@ -33,7 +33,6 @@ class MedicineProvider with ChangeNotifier {
     _state = SearchState.loading;
     _errorMessage = '';
     notifyListeners();
-
     try {
       _results = await ApiService.searchMedicine(query.trim());
       _state = SearchState.success;
@@ -46,13 +45,15 @@ class MedicineProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> loadMedicineInfo(String id) async {
+  Future<void> loadMedicineInfo(Medicine medicine) async {
     _isLoadingInfo = true;
-    _selectedMedicine = null;
+    _selectedMedicine = medicine;
     notifyListeners();
     try {
-      _selectedMedicine = await ApiService.getMedicineInfo(id);
-    } catch (_) {}
+      _selectedMedicine = await ApiService.getMedicineInfo(medicine.id, medicine);
+    } catch (_) {
+      _selectedMedicine = medicine;
+    }
     _isLoadingInfo = false;
     notifyListeners();
   }
@@ -78,7 +79,9 @@ class MedicineProvider with ChangeNotifier {
   void _addRecentSearch(String query) {
     _recentSearches.remove(query);
     _recentSearches.insert(0, query);
-    if (_recentSearches.length > 10) _recentSearches = _recentSearches.sublist(0, 10);
+    if (_recentSearches.length > 10) {
+      _recentSearches = _recentSearches.sublist(0, 10);
+    }
     _saveRecentSearches();
     notifyListeners();
   }
