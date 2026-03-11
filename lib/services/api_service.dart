@@ -19,12 +19,14 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data is List) {
-          return data.map((e) => Medicine.fromSearchJson(e)).toList();
-        } else if (data is Map && data['data'] is List) {
-          return (data['data'] as List)
+        // الـ API بيرجع {"code":200,"products":[...]}
+        if (data is Map && data['products'] is List) {
+          return (data['products'] as List)
               .map((e) => Medicine.fromSearchJson(e))
               .toList();
+        }
+        if (data is List) {
+          return data.map((e) => Medicine.fromSearchJson(e)).toList();
         }
       }
       return [];
